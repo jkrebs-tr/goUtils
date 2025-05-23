@@ -1,4 +1,4 @@
-package bigcommerce
+package http
 
 import (
 	"bytes"
