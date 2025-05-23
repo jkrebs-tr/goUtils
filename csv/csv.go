@@ -4,8 +4,6 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
-	"runtime"
-	"sync"
 )
 
 // CreateFile creates a new file in the current directory with any given headers (if provided)
