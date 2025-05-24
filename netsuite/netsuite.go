@@ -13,6 +13,25 @@ type Connection struct {
 	db *sql.DB
 }
 
+// NewConnection creates a new NetSuite database connection using the provided connection string
+//
+// Parameters:
+//   - connStr: The SQL Server connection string for NetSuite database
+//
+// Returns:
+//   - *Connection: The database connection instance
+//   - error: Any errors encountered during connection establishment
+//
+// Example Usage:
+//
+//	connStr := "sqlserver://username:password@localhost:1433?database=netsuite"
+//	conn, err := NewConnection(connStr)
+//	if err != nil {
+//	    log.Fatal("Failed to connect to NetSuite database:", err)
+//	}
+//	
+//	// Always remember to close the connection
+//	defer conn.Close()
 func NewConnection(connStr string) (*Connection, error) {
 	db, err := sql.Open("sqlserver", connStr)
 	if err != nil {
@@ -28,6 +47,19 @@ func NewConnection(connStr string) (*Connection, error) {
 	return &Connection{db: db}, nil
 }
 
+// Close closes the database connection and releases any associated resources
+//
+// Returns:
+//   - error: Any errors encountered during connection closure
+//
+// Example Usage:
+//
+//	defer conn.Close()
+//	
+//	// Or explicitly close when done
+//	if err := conn.Close(); err != nil {
+//	    log.Printf("Error closing connection: %v", err)
+//	}
 func (c *Connection) Close() error {
 	if c.db != nil {
 		return c.db.Close()
@@ -35,6 +67,40 @@ func (c *Connection) Close() error {
 	return nil
 }
 
+// Select executes a SQL query and scans the results into the provided destination slice
+//
+// Parameters:
+//   - query: The SQL query string to execute
+//   - dest: A pointer to a slice where query results will be stored
+//   - args: Optional query arguments for parameterized queries
+//
+// Returns:
+//   - error: Any errors encountered during query execution or result scanning
+//
+// Example Usage:
+//
+//	type Customer struct {
+//	    ID    int    `db:"customer_id"`
+//	    Name  string `db:"customer_name"`
+//	    Email string `db:"email"`
+//	}
+//	
+//	var customers []Customer
+//	err := conn.Select("SELECT customer_id, customer_name, email FROM customers WHERE active = ?", &customers, 1)
+//	if err != nil {
+//	    log.Fatal("Query failed:", err)
+//	}
+//	
+//	for _, customer := range customers {
+//	    fmt.Printf("ID: %d, Name: %s, Email: %s\n", customer.ID, customer.Name, customer.Email)
+//	}
+//	
+//	// With pointer slice
+//	var customerPtrs []*Customer
+//	err = conn.Select("SELECT customer_id, customer_name, email FROM customers WHERE region = ?", &customerPtrs, "US")
+//	if err != nil {
+//	    log.Fatal("Query with pointers failed:", err)
+//	}
 func (c *Connection) Select(query string, dest any, args ...any) error {
 	rows, err := c.db.Query(query, args...)
 	if err != nil {
