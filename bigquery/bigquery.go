@@ -15,6 +15,16 @@ type Client struct {
     ctx       context.Context
 }
 
+type QueryStats struct {
+    RowsAffected int64
+    JobID        string
+}
+
+type StreamingStats struct {
+    RowsInserted int64
+    Errors       []error
+}
+
 func NewClient(ctx context.Context, projectID string) (*Client, error) {
     bqClient, err := bigquery.NewClient(ctx, projectID)
     if err != nil {
@@ -32,9 +42,96 @@ func (c *Client) Close() error {
     return c.bq.Close()
 }
 
-type QueryStats struct {
-    RowsAffected int64
-    JobID        string
+// StreamingInsert performs a streaming insert operation
+func (c *Client) StreamingInsert(datasetID, tableID string, rows any) (*StreamingStats, error) {
+    dataset := c.bq.Dataset(datasetID)
+    table := dataset.Table(tableID)
+    inserter := table.Inserter()
+    
+    // Convert rows to the format BigQuery expects
+    rowsValue := reflect.ValueOf(rows)
+    if rowsValue.Kind() != reflect.Slice && rowsValue.Kind() != reflect.Array {
+        return nil, fmt.Errorf("rows must be a slice or array")
+    }
+    
+    // Create a slice of any to hold the rows
+    var bqRows []any
+    for i := 0; i < rowsValue.Len(); i++ {
+        bqRows = append(bqRows, rowsValue.Index(i).Interface())
+    }
+    
+    err := inserter.Put(c.ctx, bqRows)
+    if err != nil {
+        return nil, fmt.Errorf("streaming insert failed: %w", err)
+    }
+    
+    return &StreamingStats{
+        RowsInserted: int64(len(bqRows)),
+        Errors:       nil,
+    }, nil
+}
+
+// StreamingInsertWithInsertIDs performs streaming insert with custom insert IDs for deduplication
+func (c *Client) StreamingInsertWithInsertIDs(datasetID, tableID string, rows []bigquery.ValueSaver) (*StreamingStats, error) {
+    dataset := c.bq.Dataset(datasetID)
+    table := dataset.Table(tableID)
+    inserter := table.Inserter()
+    
+    err := inserter.Put(c.ctx, rows)
+    if err != nil {
+        return nil, fmt.Errorf("streaming insert with IDs failed: %w", err)
+    }
+    
+    return &StreamingStats{
+        RowsInserted: int64(len(rows)),
+        Errors:       nil,
+    }, nil
+}
+
+// StreamingInsertBatched performs streaming insert in batches for large datasets
+func (c *Client) StreamingInsertBatched(datasetID, tableID string, rows any, batchSize int) (*StreamingStats, error) {
+    rowsValue := reflect.ValueOf(rows)
+    if rowsValue.Kind() != reflect.Slice && rowsValue.Kind() != reflect.Array {
+        return nil, fmt.Errorf("rows must be a slice or array")
+    }
+    
+    totalRows := rowsValue.Len()
+    if batchSize <= 0 {
+        batchSize = 1000 // Default batch size
+    }
+    
+    dataset := c.bq.Dataset(datasetID)
+    table := dataset.Table(tableID)
+    inserter := table.Inserter()
+    
+    totalInserted := int64(0)
+    var allErrors []error
+    
+    for i := 0; i < totalRows; i += batchSize {
+        end := i + batchSize
+        if end > totalRows {
+            end = totalRows
+        }
+        
+        // Create batch
+        var batch []any
+        for j := i; j < end; j++ {
+            batch = append(batch, rowsValue.Index(j).Interface())
+        }
+        
+        err := inserter.Put(c.ctx, batch)
+        if err != nil {
+            allErrors = append(allErrors, fmt.Errorf("batch %d-%d failed: %w", i, end-1, err))
+            continue
+        }
+        
+        totalInserted += int64(len(batch))
+    }
+    
+    return &StreamingStats{
+        RowsInserted: totalInserted,
+        Errors:       allErrors,
+    }, nil
 }
 
 func (c *Client) Execute(sqlQuery string, params ...bigquery.QueryParameter) (*QueryStats, error) {
@@ -74,7 +171,7 @@ func (c *Client) Execute(sqlQuery string, params ...bigquery.QueryParameter) (*Q
 }
 
 // Query executes a BigQuery SQL and scans results into dest slice
-func (c *Client) Query(sqlQuery string, dest interface{}, params ...bigquery.QueryParameter) error {
+func (c *Client) Query(sqlQuery string, dest any, params ...bigquery.QueryParameter) error {
     q := c.bq.Query(sqlQuery)
     
     if len(params) > 0 {
