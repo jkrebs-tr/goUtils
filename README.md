@@ -16,6 +16,7 @@ A collection of **Go** utility wrappers to streamline common tasks at Trinity Ro
   * [monday](#monday)
   * [rateLimiter](#ratelimiter)
   * [ses](#ses)
+  * [assert](#assert)
 * [Contributing](#contributing)
 * [License](#license)
 
@@ -128,10 +129,37 @@ AWS SES email helpers:
 
 * **`NewSESClient(region string) (*SESClient, error)`**
 * **`(*SESClient) SendEmail(EmailConfig) error`**
-* **`SendSimpleEmail(recipients []string, sender, subject, htmlBody, textBody string) error`**
+* **`(*SESClient) SendEmailBulk(configs []EmailConfig) error`**
 
 ```go
 stats, err := ses.SendEmailBulk(configs)
+```
+
+---
+
+### assert
+
+Assertions for quick tests and sanity checks:
+
+* **`AssertEqual[T comparable](actual, expected T)`** – fails if `actual != expected`.
+* **`AssertNotEqual[T comparable](actual, expected T)`** – fails if `actual == expected`.
+* **`AssertTrue(cond bool, msgAndArgs ...any)`** – fails if `cond` is false.
+* **`AssertFalse(cond bool, msgAndArgs ...any)`** – fails if `cond` is true.
+* **`AssertNil(obj any)`** – fails if `obj` is not nil (handles interface-wrapped nils).
+* **`AssertNotNil(obj any)`** – fails if `obj` is nil.
+* **`AssertError(err error)`** – fails if `err` is nil.
+* **`AssertNoError(err error)`** – fails if `err` is non-nil.
+* **`AssertContains(s, substr string)`** – fails if `substr` is not found in `s`.
+* **`AssertPanics(fn func())`** – fails unless `fn()` panics.
+
+```go
+import "github.com/yourorg/goUtils/assert"
+
+func TestFoo(t *testing.T) {
+    assert.AssertEqual(got, want)
+    assert.AssertNoError(err)
+    assert.AssertPanics(func() { Foo(nil) })
+}
 ```
 
 ---
