@@ -1,6 +1,6 @@
 # goUtils
 
-A collection of **Go** utility wrappers to streamline common tasks at Trinity Road (and beyond). Each package exposes simple, type-safe APIs—**no reflection required**—using Go 1.18+ generics and the underlying client libraries.
+A collection of **Go** utility wrappers to streamline personal common tasks
 
 ---
 
