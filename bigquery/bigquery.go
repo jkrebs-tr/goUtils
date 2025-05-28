@@ -225,12 +225,8 @@ func StreamingInsertBatched[T any](c *Client, datasetID, tableID string, rows []
 	var allErrors []error
 
 	for i := 0; i < len(rows); i += batchSize {
-		end := i + batchSize
-		if end > len(rows) {
-			end = len(rows)
-		}
+		end := min(i + batchSize, len(rows))
 
-		// Create batch
 		batch := make([]any, end-i)
 		for j := i; j < end; j++ {
 			batch[j-i] = rows[j]

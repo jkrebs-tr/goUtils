@@ -17,6 +17,7 @@ A collection of **Go** utility wrappers to streamline personal common tasks
   * [rateLimiter](#ratelimiter)
   * [ses](#ses)
   * [assert](#assert)
+  * [chatgpt](#chatgpt)
 * [Contributing](#contributing)
 * [License](#license)
 
@@ -164,6 +165,26 @@ func TestFoo(t *testing.T) {
 
 ---
 
+### chatgpt
+
+minimal chatgpt interface to send requests to openai models
+
+* **`SendRequest(model string, messages []Message, tmp float32, key string) (Response, error)`** – send a request to gpt`.
+
+```go
+import "github.com/yourorg/goUtils/chatgpt"
+
+messages := []Message{
+    {Role: "system", Content: "You are a helpful assistant"
+    {Role: "user", Content: "Tell me a joke"
+}
+
+response, err := chatgpt.SendRequest("gpt-4", messages, 0.7, os.Getenv("OPEN_API_KEY"))
+
+```
+
+---
+
 ## Contributing
 
 1. Fork this repo
@@ -176,4 +197,3 @@ func TestFoo(t *testing.T) {
 ## License
 
 MIT © Trinity Road
-
