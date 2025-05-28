@@ -13,7 +13,6 @@ A collection of **Go** utility wrappers to streamline personal common tasks
   * [http](#http)
   * [csv](#csv)
   * [netsuite](#netsuite)
-  * [monday](#monday)
   * [rateLimiter](#ratelimiter)
   * [ses](#ses)
   * [assert](#assert)
@@ -106,21 +105,6 @@ var invoices []Invoice
 conn, _ := netsuite.NewConnection(connStr)
 _ = conn.Select("SELECT * FROM invoices", &invoices)
 ```
-
----
-
-### monday
-
-Minimal Monday.com API client:
-
-* **`MakeRequest()`** – stub for future expansion.
-
-### rateLimiter
-
-Token‐bucket rate limiter:
-
-* **`NewRateLimiter(rps int) *RateLimiter`**
-* **`(*RateLimiter) Wait()`** – block until next token is available.
 
 ---
 
