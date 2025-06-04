@@ -122,7 +122,7 @@ func (c *Client) Collection(dbName, collName string) *mongo.Collection {
 	return c.Raw.Database(dbName).Collection(collName)
 }
 
-// GetAllDocuments fetches every document from the Client’s configured collection (c.Coll).
+// GetAllDocumentsRaw fetches every document from the Client’s configured collection (c.Coll).
 // It creates a 5-second timeout context, executes a Find with an empty filter (bson.M{}),
 // and decodes all results into a slice of bson.M maps. If you prefer to query a different
 // collection, use client.Database().Collection(...) directly instead.
@@ -134,14 +134,14 @@ func (c *Client) Collection(dbName, collName string) *mongo.Collection {
 // Example usage:
 //
 //	// Assuming 'client' is *Client with c.Coll already set to "items" collection
-//	items, err := client.GetAllDocuments()
+//	items, err := client.GetAllDocumentsRaw()
 //	if err != nil {
 //	    log.Fatalf("failed to fetch documents: %v", err)
 //	}
 //	for _, doc := range items {
 //	    fmt.Printf("%+v\n", doc)
 //	}
-func (c *Client) GetAllDocuments() ([]bson.M, error) {
+func (c *Client) GetAllDocumentsRaw() ([]bson.M, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -157,4 +157,32 @@ func (c *Client) GetAllDocuments() ([]bson.M, error) {
 	}
 
 	return results, nil
+}
+
+// GetAllDocuments fetches every document from the Client’s configured collection (c.Coll).
+// It creates a 5-second timeout context, executes a Find with an empty filter (bson.M{}),
+// and decodes all results into a slice of bson.M maps. If you prefer to query a different
+// collection, use client.Database().Collection(...) directly instead.
+//
+// Returns:
+//   - error:    Non-nil if the Find operation, cursor iteration, or decoding fails.
+//
+// Example usage:
+//
+//	// Assuming 'client' is *Client with c.Coll already set to "items" collection
+//	items, err := client.GetAllDocuments(results any)
+//	if err != nil {
+//	    log.Fatalf("failed to fetch documents: %v", err)
+//	}
+func (c *Client) GetAllDocuments(results any) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cursor, err := c.Coll.Find(ctx, bson.M{})
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(ctx)
+
+	return cursor.All(ctx, results)
 }
