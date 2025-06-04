@@ -17,6 +17,7 @@ A collection of **Go** utility wrappers to streamline personal common tasks
   * [ses](#ses)
   * [assert](#assert)
   * [chatgpt](#chatgpt)
+  * mongo
 * [Contributing](#contributing)
 * [License](#license)
 
@@ -166,6 +167,33 @@ messages := []Message{
 response, err := chatgpt.SendRequest("gpt-4", messages, 0.7, os.Getenv("OPEN_API_KEY"))
 
 ```
+
+---
+
+### mongo
+
+MongoDB client helpers:
+
+* **`NewConnection(uri, dbName, collName string) (*Client, error)`**
+* **`(*Client) Close() error`**
+* **`(*Client) Database(name string) *mongo.Database`**
+* **`(*Client) Collection(dbName, collName string) *mongo.Collection`**
+* **`(*Client) GetAllDocuments() ([]bson.M, error)`**
+
+```go
+client, err := mongo.NewConnection("mongodb://localhost:27017", "testdb", "items")
+if err != nil {
+    log.Fatalf("failed to connect: %v", err)
+}
+defer client.Close()
+
+docs, err := client.GetAllDocuments()
+if err != nil {
+    log.Fatalf("failed to fetch documents: %v", err)
+}
+for _, doc := range docs {
+    fmt.Printf("%+v\n", doc)
+}
 
 ---
 
