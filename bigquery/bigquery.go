@@ -225,7 +225,7 @@ func StreamingInsertBatched[T any](c *Client, datasetID, tableID string, rows []
 	var allErrors []error
 
 	for i := 0; i < len(rows); i += batchSize {
-		end := min(i + batchSize, len(rows))
+		end := min(i+batchSize, len(rows))
 
 		batch := make([]any, end-i)
 		for j := i; j < end; j++ {
@@ -292,11 +292,18 @@ func Query[T any](c *Client, sqlQuery string, dest *[]T, params ...bigquery.Quer
 		q.Parameters = params
 	}
 
+	// Run the query and get the iterator
 	it, err := q.Read(c.ctx)
 	if err != nil {
 		return fmt.Errorf("query execution failed: %w", err)
 	}
 
+	// If no destination provided, consume zero rows and return
+	if dest == nil {
+		return nil
+	}
+
+	// Otherwise, scan into destination
 	for {
 		var elem T
 		err := it.Next(&elem)
@@ -306,7 +313,6 @@ func Query[T any](c *Client, sqlQuery string, dest *[]T, params ...bigquery.Quer
 		if err != nil {
 			return fmt.Errorf("error reading row: %w", err)
 		}
-
 		*dest = append(*dest, elem)
 	}
 
