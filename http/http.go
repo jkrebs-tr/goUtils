@@ -19,6 +19,7 @@ import (
 //   - body: Request body (will be JSON marshaled), pass nil for GET requests
 //   - params: Query parameters as key-value pairs
 //   - headers: HTTP headers as key-value pairs
+//   - printRawBody: true/false to print the raw unmarshaled body
 //
 // Returns an error if the request fails, status code is not 2xx, or JSON unmarshaling fails.
 //
@@ -26,22 +27,22 @@ import (
 //
 //	// GET request
 //	var user User
-//	err := MakeRequest("GET", "https://api.example.com/users/1", &user, nil, nil, nil)
+//	err := MakeRequest("GET", "https://api.example.com/users/1", &user, nil, nil, nil, false)
 //
 //	// POST request with body
 //	newUser := User{Name: "John", Email: "john@example.com"}
 //	var createdUser User
-//	err := MakeRequest("POST", "https://api.example.com/users", &createdUser, newUser, nil, nil)
+//	err := MakeRequest("POST", "https://api.example.com/users", &createdUser, newUser, nil, nil, false)
 //
 //	// GET with query parameters
 //	params := map[string]string{"page": "1", "limit": "10"}
 //	var users []User
-//	err := MakeRequest("GET", "https://api.example.com/users", &users, nil, params, nil)
+//	err := MakeRequest("GET", "https://api.example.com/users", &users, nil, params, nil, false)
 //
 //	// POST with custom headers
 //	headers := map[string]string{"Authorization": "Bearer token123"}
-//	err := MakeRequest("POST", "https://api.example.com/protected", &result, data, nil, headers)
-func MakeRequest[T any](method string, url string, res *T, body any, params map[string]string, headers map[string]string) error {
+//	err := MakeRequest("POST", "https://api.example.com/protected", &result, data, nil, headers, false)
+func MakeRequest[T any](method string, url string, res *T, body any, params map[string]string, headers map[string]string, printRawBody bool) error {
 	// create client
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -101,8 +102,11 @@ func MakeRequest[T any](method string, url string, res *T, body any, params map[
 		return fmt.Errorf("Error Reading Response Body: %w", err)
 	}
 
-	if err = json.Unmarshal(responseBody, res); err != nil {
+	if printRawBody {
 		fmt.Printf("Response Body: %v", string(responseBody))
+	}
+
+	if err = json.Unmarshal(responseBody, res); err != nil {
 		return fmt.Errorf("Error Unmarshaling Response: %w", err)
 	}
 
