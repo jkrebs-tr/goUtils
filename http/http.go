@@ -42,7 +42,7 @@ import (
 //	// POST with custom headers
 //	headers := map[string]string{"Authorization": "Bearer token123"}
 //	err := MakeRequest("POST", "https://api.example.com/protected", &result, data, nil, headers, false)
-func MakeRequest[T any](method string, url string, res *T, body any, params map[string]string, headers map[string]string, printRawBody bool) error {
+func MakeRequest[T any](method string, url string, res *T, body any, params map[string]string, headers map[string]string, printRawBody ...bool) error {
 	// create client
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -102,7 +102,11 @@ func MakeRequest[T any](method string, url string, res *T, body any, params map[
 		return fmt.Errorf("Error Reading Response Body: %w", err)
 	}
 
-	if printRawBody {
+	shouldPrint := false
+	if len(printRawBody) > 0 {
+		shouldPrint = printRawBody[0]
+	}
+	if shouldPrint {
 		fmt.Printf("Response Body: %v", string(responseBody))
 	}
 
