@@ -151,14 +151,14 @@ func MakeRequest[T any](method string, url string, res *T, body any, params map[
 //	variables := map[string]interface{}{"input": map[string]interface{}{"name": "John", "email": "john@example.com"}}
 //	var result CreateUserResult
 //	err := MakeGraphQLRequest("https://api.example.com/graphql", mutation, variables, &result, nil)
-func MakeGraphQLRequest[T any](url string, query string, variables map[string]any, res *T, headers map[string]string) error {
+func MakeGraphQLRequest[T any](url string, query string, variables map[string]any, res *T, headers map[string]string, printRawBody ...bool) error {
 	gqlReq := GraphQLRequest{
 		Query:     query,
 		Variables: variables,
 	}
 
 	var gqlRes GraphQLResponse[T]
-	err := MakeRequest("POST", url, &gqlRes, gqlReq, nil, headers)
+	err := MakeRequest("POST", url, &gqlRes, gqlReq, nil, headers, printRawBody...)
 	if err != nil {
 		return fmt.Errorf("GraphQL request failed: %w", err)
 	}
