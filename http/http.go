@@ -102,7 +102,7 @@ func MakeRequest[T any](method string, url string, res *T, body any, params map[
 	}
 
 	if err = json.Unmarshal(responseBody, res); err != nil {
-		fmt.Printf("Response Body: %v", responseBody)
+		fmt.Printf("Response Body: %v", string(responseBody))
 		return fmt.Errorf("Error Unmarshaling Response: %w", err)
 	}
 
