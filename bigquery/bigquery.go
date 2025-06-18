@@ -246,7 +246,7 @@ func StreamingInsertBatched[T any](c *Client, datasetID, tableID string, rows []
 	}, nil
 }
 
-// Query executes a BigQuery SQL query and scans the results into the provided destination slice using typed results
+// Select executes a BigQuery SQL query and scans the results into the provided destination slice using typed results
 //
 // Parameters:
 //   - c: The BigQuery client instance
@@ -265,9 +265,9 @@ func StreamingInsertBatched[T any](c *Client, datasetID, tableID string, rows []
 //	}
 //
 //	var people []Person
-//	err := Query(client, "SELECT name, age FROM my_dataset.people_table WHERE age > 25", &people)
+//	err := Select(client, "SELECT name, age FROM my_dataset.people_table WHERE age > 25", &people)
 //	if err != nil {
-//	    log.Fatal("Query failed:", err)
+//	    log.Fatal("Select failed:", err)
 //	}
 //
 //	for _, person := range people {
@@ -281,11 +281,11 @@ func StreamingInsertBatched[T any](c *Client, datasetID, tableID string, rows []
 //	}
 //
 //	var adults []Person
-//	err = Query(client, "SELECT name, age FROM my_dataset.people_table WHERE age >= @min_age", &adults, param)
+//	err = Select(client, "SELECT name, age FROM my_dataset.people_table WHERE age >= @min_age", &adults, param)
 //	if err != nil {
 //	    log.Fatal("Parameterized query failed:", err)
 //	}
-func Query[T any](c *Client, sqlQuery string, dest *[]T, params ...bigquery.QueryParameter) error {
+func Select[T any](c *Client, sqlQuery string, dest *[]T, params ...bigquery.QueryParameter) error {
 	q := c.bq.Query(sqlQuery)
 
 	if len(params) > 0 {
@@ -296,11 +296,6 @@ func Query[T any](c *Client, sqlQuery string, dest *[]T, params ...bigquery.Quer
 	it, err := q.Read(c.ctx)
 	if err != nil {
 		return fmt.Errorf("query execution failed: %w", err)
-	}
-
-	// If no destination provided, consume zero rows and return
-	if dest == nil {
-		return nil
 	}
 
 	// Otherwise, scan into destination
@@ -314,6 +309,21 @@ func Query[T any](c *Client, sqlQuery string, dest *[]T, params ...bigquery.Quer
 			return fmt.Errorf("error reading row: %w", err)
 		}
 		*dest = append(*dest, elem)
+	}
+
+	return nil
+}
+
+func Query(c *Client, sqlQuery string, params ...bigquery.QueryParameter) error {
+	q := c.bq.Query(sqlQuery)
+
+	if len(params) > 0 {
+		q.Parameters = params
+	}
+
+	_, err := q.Read(c.ctx)
+	if err != nil {
+		return fmt.Errorf("query execution failed: %w", err)
 	}
 
 	return nil
